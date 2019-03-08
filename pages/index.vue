@@ -57,6 +57,8 @@ export default {
 <style lang="scss">
 #top {
   display: flex;
+  overflow: hidden;
+  max-width: 100vw;
   align-items: center;
   justify-content: space-between;
   input#section-input {
