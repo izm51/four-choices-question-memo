@@ -17,10 +17,14 @@ module.exports = {
     meta: [
       { charset: 'utf-8' },
       { name: 'viewport', content: 'width=device-width, initial-scale=1' },
+      { name: 'mobile-web-app-capable', content: 'yes'},
+      { name: 'apple-mobile-web-app-capable', content: 'yes'},
       { hid: 'description', name: 'description', content: pkg.description }
     ],
     link: [
-      { rel: 'icon', type: 'image/x-icon', href: '/favicon.ico' },
+      { rel: 'icon', type: 'image/x-icon', href: '/four-choices-question-memo/favicon.ico' },
+      { rel: 'shortcut icon', size: '196x196', href: '/four-choices-question-memo/icon-196x196.png'},
+      { rel: 'apple-touch-icon', href: '/four-choices-question-memo/icon-196x196.png'},
       {
         rel: 'stylesheet',
         href:
