@@ -1,6 +1,6 @@
 # nuxt-four-choices-question
 
-> My phenomenal Nuxt.js project
+> [GitHub Pages](https://izm51.github.io/four-choices-question-memo/)
 
 ## Build Setup
 
