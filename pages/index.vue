@@ -65,6 +65,7 @@ export default {
     // border: 1px #000 solid;
     background: #fff;
     border-style: inset;
+    width: 100%;
   }
 }
 div#main {
