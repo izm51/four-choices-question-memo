@@ -22,9 +22,14 @@
       </div>
     </div>
     <input type="checkbox" name="mode" id="mode" class="mode" v-model="result">
-    <label for="mode">
-      <div class="mode-button" @click="$refs.stopwatch.pause()">表示切り替え</div>
-    </label>
+    <v-layout justify-center id="bottom">
+      <label for="mode">
+        <div class="bottom-button" @click="$refs.stopwatch.pause()">表示切り替え</div>
+      </label>
+      <nuxt-link v-scroll-to="{el:'#top',offset: -100}" to>
+        <div class="bottom-button">TOPへ</div>
+      </nuxt-link>
+    </v-layout>
   </v-layout>
 </template>
 
@@ -49,7 +54,10 @@ export default {
       })
     }
   },
-  mounted() {
+  created() {
+    window.addEventListener('beforeunload', function(e) {
+      e.returnValue = 'reload';
+    }, false);
   }
 }
 </script>
@@ -122,12 +130,16 @@ div.question {
 input.mode {
   display: none;
 }
-div.mode-button {
+#bottom a{
+  text-decoration: none;
+}
+div.bottom-button {
   border: 1px solid #333;
   width: fit-content;
   padding: 2px 10px;
   font-weight: bold;
   margin: 10px auto;
+  color: #000;
 }
 .result {
   #top {

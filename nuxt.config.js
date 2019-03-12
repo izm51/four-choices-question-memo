@@ -49,13 +49,15 @@ module.exports = {
   ** Plugins to load before mounting the App
   */
   plugins: [
-    '@/plugins/vuetify'
+    '@/plugins/vuetify',
+    '~/plugins/vue-scrollto',
   ],
 
   /*
   ** Nuxt.js modules
   */
   modules: [
+    ['vue-scrollto/nuxt', { duration: 300 }],
   ],
 
   /*
