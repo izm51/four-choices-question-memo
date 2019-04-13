@@ -3,22 +3,29 @@
     <div id="top">
       <input type="text" name="section" id="section-input" placeholder="Title">
       <stopwatch ref="stopwatch"></stopwatch>
+      <v-icon @click="showSetting=!showSetting" class="settings">settings</v-icon>
+      <input type="text" v-model.number.lazy="num" class="number-question" v-if="showSetting">
+      <!-- <v-dialog v-model="showSettings" light>
+        <v-card>
+          <div>設問数：<input type="text" v-model.number.lazy="num" class="number-question"></div>
+        </v-card>
+      </v-dialog> -->
     </div>
     <div id="main">
-      <div class="question" v-for="i in questions" :key="i" :class="{ marked : check[i] || memo[i]}">
-        <input type="checkbox" :name="'check-'+i" :id="'check-'+i" class="check" v-model="check[i]">
+      <div class="question" v-for="(q, i) in questions" :key="i" :class="{ marked : q.check || q.memo}" v-show="i<num">
+        <input type="checkbox" :name="'check-'+i" :id="'check-'+i" class="check" v-model="q.check">
         <label :for="'check-'+i">
-          <h2>{{i}}.</h2>
+          <h2>{{i+1}}.</h2>
         </label>
         <div class="options">
           <div class="option" v-for="option in ['A', 'B', 'C', 'D']" :key="option">
-            <input type="radio" :name="i" :id="i+'-'+option" class="radio">
+            <input type="radio" :name="i" :id="i+'-'+option" class="radio" v-model="q.choice" :value="option">
             <label :for="i+'-'+option">
               <div class="radio-button">{{option}}</div>
             </label>
           </div>
         </div>
-        <textarea :name="'memo-'+i" :id="'memo-'+i" class="memo" v-model="memo[i]" :rows="rows[i]"></textarea>
+        <textarea :name="'memo-'+i" :id="'memo-'+i" class="memo" v-model="q.memo" :rows="rows[i]"></textarea>
       </div>
     </div>
     <input type="checkbox" name="mode" id="mode" class="mode" v-model="result">
@@ -42,22 +49,39 @@ export default {
   data() {
     return {
       result: false,
-      questions: 20,
-      check: [],
-      memo: ['','','','','','','','','','','','','','','','','','','','',''],
+      questions: [],
+      num: 20,
+      showSetting: false,
     }
   },
   computed: {
     rows() {
-      return this.memo.map(item => {
-        return Math.max(item.split("\n").length , 1)
+      return this.questions.map(item => {
+        return Math.max(item.memo.split("\n").length , 1)
       })
+    }
+  },
+  watch: {
+    num(newN, oldN) {
+      if (newN > this.questions.length) {
+        this.fillQuestions(newN)
+      }
     }
   },
   created() {
     window.addEventListener('beforeunload', function(e) {
       e.returnValue = 'reload';
     }, false);
+    this.fillQuestions(20)
+  },
+  methods: {
+    fillQuestions(n) {
+      let newArr = new Array(n - this.questions.length)
+      for (let i = 0; i < newArr.length; i++) {
+        newArr[i] = {check: false, choice: '', memo: ''}
+      }
+      this.questions = this.questions.concat(newArr)
+    }
   }
 }
 </script>
@@ -74,6 +98,14 @@ export default {
     background: #fff;
     border-style: inset;
     width: 100%;
+  }
+  .settings {
+    width: fit-content;
+  }
+  input.number-question {
+    background: #fff;
+    border-style: inset;
+    width: 20px;
   }
 }
 div#main {
@@ -146,6 +178,9 @@ div.bottom-button {
     font-weight: bold;
     font-size: 150%;
     .reset-button {
+      display: none;
+    }
+    .settings, .number-question {
       display: none;
     }
   }
