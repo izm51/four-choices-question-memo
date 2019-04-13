@@ -1,7 +1,7 @@
 <template>
   <v-layout column :class="{result : result}">
     <div id="top">
-      <input type="text" name="section" id="section-input" placeholder="Title">
+      <input type="text" name="section" id="section-input" placeholder="Title" v-model="title">
       <stopwatch ref="stopwatch"></stopwatch>
       <v-icon @click="showSetting=!showSetting" class="settings">settings</v-icon>
       <input type="text" v-model.number.lazy="num" class="number-question" v-if="showSetting">
@@ -36,12 +36,14 @@
       <nuxt-link v-scroll-to="{el:'#top',offset: -100}" to>
         <div class="bottom-button">TOPへ</div>
       </nuxt-link>
+      <div class="bottom-button" @click="save">SAVE</div>
     </v-layout>
   </v-layout>
 </template>
 
 <script>
 import Stopwatch from '@/components/stopwatch.vue'
+import firebase from '~/plugins/firebase.js'
 export default {
   components: {
     Stopwatch
@@ -52,6 +54,8 @@ export default {
       questions: [],
       num: 20,
       showSetting: false,
+      id: null,
+      title: null,
     }
   },
   computed: {
@@ -74,6 +78,22 @@ export default {
     }, false);
     this.fillQuestions(20)
   },
+  mounted() {
+    if(this.$route.query.id !== undefined) {
+      const db = firebase.database().ref(this.$route.query.id).on('value', (v) => {
+        const data = v.val()
+        if(data !== null) {
+          this.questions = data.questions
+          this.num = data.num
+          this.title = data.title
+          this.id = this.$route.query.id
+        } else {
+          this.$router.push("/")
+        }
+      })
+    }
+    const db = firebase.database()
+  },
   methods: {
     fillQuestions(n) {
       let newArr = new Array(n - this.questions.length)
@@ -81,8 +101,22 @@ export default {
         newArr[i] = {check: false, choice: '', memo: ''}
       }
       this.questions = this.questions.concat(newArr)
+    },
+    save() {
+      if (this.id == null) {
+        const str = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_-";
+        const len = 48;
+        let result = "";
+        for(var i=0;i<len;i++){
+          result += str.charAt(Math.floor(Math.random() * str.length));
+        }
+        this.id = result
+      }
+      const db = firebase.database().ref(this.id).set({questions: this.questions, num: this.num, title: this.title})
+      this.$router.push({query: {id: this.id}
+})
     }
-  }
+  },
 }
 </script>
 
@@ -170,7 +204,7 @@ div.bottom-button {
   width: fit-content;
   padding: 2px 10px;
   font-weight: bold;
-  margin: 10px auto;
+  margin: 10px 0;
   color: #000;
 }
 .result {

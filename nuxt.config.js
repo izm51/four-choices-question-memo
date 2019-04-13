@@ -50,14 +50,16 @@ module.exports = {
   */
   plugins: [
     '@/plugins/vuetify',
-    '~/plugins/vue-scrollto',
+    '@/plugins/vue-scrollto',
+    '~/plugins/firebase',
   ],
 
   /*
   ** Nuxt.js modules
   */
   modules: [
-    ['vue-scrollto/nuxt', { duration: 300 }],
+    ['vue-scrollto/nuxt', { duration: 300 },],
+    '@nuxtjs/axios',
   ],
 
   /*
