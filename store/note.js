@@ -90,23 +90,27 @@ export const actions = {
     this.$router.push({ query: { id: rootState.note.key } })
   },
   async fetchNote({ commit, dispatch, rootState }, key) {
-    let id
-    if (rootState.auth.user) {
-      id = rootState.auth.user.uid + "/" + key
+    if (key === undefined) {
+      dispatch('initNote')
     } else {
-      id = "guest" + "/" + key
-    }
-    firebase.database().ref("note/" + id).on('value', (v) => {
-      const data = v.val()
-      if (data !== null) {
-        commit('setNote', data)
-        commit('setKey', key)
-        this.$router.push({ query: { id: key } })
+      let id
+      if (rootState.auth.user) {
+        id = rootState.auth.user.uid + "/" + key
       } else {
-        dispatch('initNote')
-        this.$router.push("/")
+        id = "guest" + "/" + key
       }
-    })
+      firebase.database().ref("note/" + id).on('value', (v) => {
+        const data = v.val()
+        if (data !== null) {
+          commit('setNote', data)
+          commit('setKey', key)
+          this.$router.push({ query: { id: key } })
+        } else {
+          dispatch('initNote')
+          this.$router.push("/")
+        }
+      })
+    }
   },
   async fetchNoteList({ commit, rootState }) {
     if (rootState.auth.user) {
