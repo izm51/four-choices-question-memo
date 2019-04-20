@@ -19,7 +19,7 @@ module.exports = {
       { name: 'viewport', content: 'width=device-width, initial-scale=1' },
       { name: 'mobile-web-app-capable', content: 'yes'},
       { name: 'apple-mobile-web-app-capable', content: 'yes'},
-      { hid: 'description', name: 'description', content: pkg.description }
+      { hid: 'description', name: 'description', content: "TOEICなどの4択問題の解答と、各問のメモを記録するための簡易ツール！Googleのアカウントでログインすることでノートを自分のアカウントに保存し、一覧することが出来ます。" }
     ],
     link: [
       { rel: 'icon', type: 'image/x-icon', href: '/four-choices-question-memo/favicon.ico' },

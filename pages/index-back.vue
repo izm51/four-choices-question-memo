@@ -1,40 +1,45 @@
 <template>
   <v-layout column :class="{result : result}">
     <div id="top">
-      <input type="text" name="section" id="section-input" placeholder="Title" v-model.lazy="title" @change="autoSave">
+      <input type="text" name="section" id="section-input" placeholder="Title" v-model="title">
       <stopwatch ref="stopwatch"></stopwatch>
       <v-icon @click="showSetting=!showSetting" class="settings">settings</v-icon>
       <template v-if="showSetting">
-        <input type="number" min="0" max="200" v-model.number.lazy="num" class="number-question" @change="autoSave">問
+        <input type="text" v-model.number.lazy="num" class="number-question">問
       </template>
+      <!-- <v-dialog v-model="showSettings" light>
+        <v-card>
+          <div>設問数：<input type="text" v-model.number.lazy="num" class="number-question"></div>
+        </v-card>
+      </v-dialog> -->
     </div>
     <div id="main">
-      <div class="question" v-for="(q, i) in answers" :key="i" :class="{ marked : q.check || q.memo}" v-show="i<num">
-        <input type="checkbox" :name="'check-'+i" :id="'check-'+i" class="check" v-model="q.check" @change="autoSave">
+      <div class="question" v-for="(q, i) in questions" :key="i" :class="{ marked : q.check || q.memo}" v-show="i<num">
+        <input type="checkbox" :name="'check-'+i" :id="'check-'+i" class="check" v-model="q.check">
         <label :for="'check-'+i">
           <h2>{{i+1}}.</h2>
         </label>
         <div class="options">
           <div class="option" v-for="option in ['A', 'B', 'C', 'D']" :key="option">
-            <input type="radio" :name="i" :id="i+'-'+option" class="radio" v-model="q.choice" :value="option" @change="autoSave">
+            <input type="radio" :name="i" :id="i+'-'+option" class="radio" v-model="q.choice" :value="option">
             <label :for="i+'-'+option">
               <div class="radio-button">{{option}}</div>
             </label>
           </div>
         </div>
-        <textarea :name="'memo-'+i" :id="'memo-'+i" class="memo" v-model="q.memo" :rows="rows[i]" @change="autoSave"></textarea>
+        <textarea :name="'memo-'+i" :id="'memo-'+i" class="memo" v-model="q.memo" :rows="rows[i]"></textarea>
       </div>
     </div>
+    <input type="checkbox" name="mode" id="mode" class="mode" v-model="result">
     <v-layout justify-center id="bottom">
-      <v-btn dark small color="blue" @click="switchView"><v-icon>cached</v-icon>表示切替</v-btn>
+      <label for="mode">
+        <div class="bottom-button" @click="$refs.stopwatch.pause()">表示切り替え</div>
+      </label>
       <nuxt-link v-scroll-to="{el:'#top',offset: -100}" to>
-        <v-btn dark small color="gray"><v-icon>arrow_upward</v-icon>一番上へ</v-btn>
+        <div class="bottom-button">TOPへ</div>
       </nuxt-link>
-      <v-btn dark small color="light-green" @click="saveNote" v-if="!$store.state.note.key"><v-icon>save</v-icon>新規保存</v-btn>
-      <v-btn dark small color="red" @click="deleteNote" v-if="$store.state.note.key"><v-icon>delete_forever</v-icon>削除</v-btn>
+      <div class="bottom-button" @click="saveData">SAVE</div>
     </v-layout>
-    <v-snackbar bottom :timeout="3000" v-model="saved">保存されました！<br>以後オートセーブされます。<v-btn flat @click="saved=false"><v-icon>close</v-icon></v-btn></v-snackbar>
-    <v-snackbar bottom :timeout="3000" v-model="deleted">消去されました。<v-btn flat @click="deleted=false"><v-icon>close</v-icon></v-btn></v-snackbar>
   </v-layout>
 </template>
 
@@ -48,9 +53,11 @@ export default {
   data() {
     return {
       result: false,
+      questions: [],
+      num: 20,
       showSetting: false,
-      saved: false,
-      deleted: false
+      key: null,
+      title: "",
     }
   },
   computed: {
@@ -60,34 +67,26 @@ export default {
     user() {
       return this.$store.state.auth.user
     },
-    answers() {
-      return this.$store.state.note.note.answers
-    },
-    title: {
-      get() {
-        return this.$store.state.note.note.title
-      },
-      set(val) {
-        this.$store.commit("note/setTitle", val)
-      }
-    },
-    num: {
-      get() {
-        return this.$store.state.note.note.num
-      },
-      set(val) {
-        this.$store.dispatch("note/changeNum", val)
-      }
-    },
     rows() {
-      return this.$store.getters['note/answerRows']
+      return this.questions.map(item => {
+        return Math.max(item.memo.split("\n").length , 1)
+      })
+    }
+  },
+  watch: {
+    num(newN, oldN) {
+      if (newN > this.questions.length) {
+        this.fillQuestions(newN)
+      }
     }
   },
   created() {
     // this.antiReload()
+    this.fillQuestions(this.num)
   },
   mounted() {
-    this.$store.dispatch("note/fetchNote", this.$route.query.id)
+    // this.getData()
+    this.fetchData()
   },
   methods: {
     antiReload() {
@@ -95,26 +94,75 @@ export default {
         e.returnValue = 'reload';
       }, false);
     },
-    saveNote() {
-      this.saved = true;
-      this.$store.dispatch("note/saveNote")
-      this.$store.dispatch("note/fetchNoteList")
+    fillQuestions(n) {
+      let newArr = new Array(n - this.questions.length)
+      for (let i = 0; i < newArr.length; i++) {
+        newArr[i] = {check: false, choice: '', memo: ''}
+      }
+      this.questions = this.questions.concat(newArr)
     },
-    autoSave() {
-      if(this.$store.state.note.key !== null) {
-        this.$store.dispatch("note/saveNote")
-        this.$store.dispatch("note/fetchNoteList")
+    fetchData() {
+      if (this.$route.query.id !== undefined) {
+        this.$store.dispatch("note/fetchNote", [this.$route.query.id])
+      }
+
+    },
+    getData() {
+      if (this.$route.query.id !== undefined) {
+        let id
+        if(this.isAuthenticated) {
+          id = this.user.uid + "/" + this.$route.query.id
+        } else {
+          id = "guest/" + this.$route.query.id
+        }
+        const db = firebase.database().ref("note/" + id).on('value', (v) => {
+          const data = v.val()
+          if (data !== null) {
+            this.questions = data.questions
+            this.num = data.num
+            this.title = data.title
+            this.key = this.$route.query.id
+          } else {
+            this.$router.push("/")
+          }
+        })
       }
     },
-    deleteNote() {
-      if (window.confirm("削除すると元には戻せません。本当に消去しますか？")) {
-        this.$store.dispatch("note/deleteNote")
-        this.deleted = true
+    saveData() {
+      if (this.key === null) {
+        const str = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_-"
+        const len = 48
+        this.key = ""
+        for (let i = 0; i < len; i++) {
+          this.key += str.charAt(Math.floor(Math.random() * str.length))
+        }
       }
-    },
-    switchView() {
-      this.result = !this.result
-      this.$refs.stopwatch.pause()
+
+      if(this.title=="") {this.title=new Date().toLocaleString()}
+
+      let content = {
+        questions: this.questions,
+        num: this.num,
+        title: this.title,
+        savedAt: new Date().toISOString()
+      }
+
+      this.$store.dispatch("note/saveNote", [content, this.key])
+
+      this.$router.push({ query: { id: this.key } })
+
+      
+      // if (this.id == null) {
+      //   const str = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_-";
+      //   const len = 48;
+      //   let result = "";
+      //   for(var i=0;i<len;i++){
+      //     result += str.charAt(Math.floor(Math.random() * str.length));
+      //   }
+      //   this.id = result
+      // }
+      // const db = firebase.database().ref(this.id).set({questions: this.questions, num: this.num, title: this.title})
+      // this.$router.push({query: {id: this.id}})
     }
   },
 }
